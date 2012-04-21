@@ -1,0 +1,75 @@
+#
+# default_patches
+#
+# Default patch file. This file is read from init.sh during the ROM build.
+# It's purpose is to define various patches to the ROM source base.
+#
+# Non-patch lines in this file must either be empty or have a '#' in the first column.
+#
+# Each patch is given on a separate line containing these fields, fields are
+# separated by whitespace.
+#  field 1 = <patch name>
+#            This should be all upper case and it is used to create a script variable
+#            of the form PATCH_<patch_name>. For example, if the name is TORCH the
+#            variable controlling it will be PATCH_TORCH. The default is that any
+#            patch defined in this file is enabled. If you want a patch to be disabled
+#            set its variable to 0 in the .ini file, e.g. PATCH_TORCH=0.
+#
+#  field 2 = <rom name>
+#            The word you specify must match in name and case a valid ROM build script.
+#            Those files have the form build_xxx.sh and the xxx part is what must match.
+#            If this name does not match the ROM you are actually building then this
+#            patch will be ignored.
+
+#  field 3 = 'git' or 'diff'
+#            You must specify one of the above words without the quotes. This indicates
+#            the patch type. 'git' is for cherry-picking from git and 'diff' is for
+#            a diff patch that is executed using the 'patch' command.
+#
+#  field 4 = path to actual patch file, which must be in the same directory as this file.
+#
+#  field 5 = directory to change into when applying the patch. *Relative* to ${AB_SOURCE_DIR}
+#
+# Using the TORCH patch as an example we have
+#  field 1 = TORCH
+#  field 2 = cm7 = this is a cm7 source patch as opposed to a cm9 or ics or lord patch.
+#  field 3 = git = this is a cherry-pick patch instead of a diff patch.
+#  field 4 = android_frameworks_base@FRAMEWORK_TORCH.git
+#  field 5 = frameworks/base
+#
+# If multiple lines use the same patch name then all of those patches will be
+# applied (or not applied) as a group. This is needed by some patches whose
+# changes are in multiple projects.
+#
+# Some group patches might use both a git and a diff patch. Typically the git
+# patch is used to throw away a previously patched version of a file before we
+# try to patch again. If we didn't do this we will either get build errors or
+# worse, the build succeeds, but is wrong.
+#
+
+###############################################################################
+# Define patches below
+###############################################################################
+
+#-----
+# Torch patch:
+#   Long press HOME key on lock screen or security screen toggles the torch function.
+#-----
+TORCH2  cm7  git  android_frameworks_base@TORCH2.git       frameworks/base
+TORCH2  cm7  git  android_packages_apps_CMParts@TORCH2.git packages/apps/CMParts
+
+#-----
+# BackLight Notification patch: Backlight turns on when email, etc is received.
+# This patch has 2 parts because the changes apply to 2 different CM7 projects.
+#-----
+BACKLIGHT  cm7  git  android_frameworks_base@BACKLIGHT.git       frameworks/base
+BACKLIGHT  cm7  git  android_packages_apps_CMParts@BACKLIGHT.git packages/apps/CMParts
+
+#-----
+# Carrier Custom Text: Allows suport for $n (newline), $d (default text),
+# $p (plmn text) and $s (spn text) within the custom carrier text..
+# This patch has 2 parts because the changes apply to 2 different CM7 projects.
+#-----
+CARRIER  cm7  git  android_frameworks_base@CARRIER.git       frameworks/base
+CARRIER  cm7  git  android_packages_apps_CMParts@CARRIER.git packages/apps/CMParts
+
