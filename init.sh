@@ -158,11 +158,6 @@ AB_ROM_SCRIPT=""
 # SHOW_HELP will let us decide if we need to display the usage information
 SHOW_HELP=0
 
-if [ "$1" == "-h" ] || [ "$1" == "-?" ]; then
-  # Setting this to 1 will cause the command line loop processing to be skipped.
-  SHOW_HELP=1
-fi
-
 #
 # We don't check for errors in this loop except for not being able to find the .ini
 # file. Instead we wait until we are done so we can detect errors that occur becuase
@@ -171,6 +166,12 @@ fi
 while [ $# -gt 0 ] && [ "$SHOW_HELP" == "0" ]; do
   # We need to set this to 1 every time in order to detect a bad option.
   SHOW_HELP=1
+
+  if [ "$1" == "-h" ] || [ "$1" == "-?" ] || [ "$1" == "-help" ]; then
+    SHOW_HELP=2
+    break
+    # Exit the loop so that we avoid the 'Invalid option' error.
+  fi
 
   if [ "$1" == "-ini" ]; then
     shift 1
@@ -183,6 +184,9 @@ while [ $# -gt 0 ] && [ "$SHOW_HELP" == "0" ]; do
       echo ""
       echo "  ERROR: Expected a file name after '-ini', saw '${INI_NAME}'"
       echo ""
+
+      # Exit the loop so that we avoid the 'Invalid option' error.
+      break
     else
       if [ "${INI_NAME:0:1}" != "/" ] && [ "${INI_NAME:0:1}" != "." ]; then
         if [ -f ${THE_SCRIPT_DIR}/${INI_NAME} ]; then
@@ -195,6 +199,9 @@ while [ $# -gt 0 ] && [ "$SHOW_HELP" == "0" ]; do
         echo ""
         echo "  ERROR .ini file '${INI_NAME}' does not exist"
         echo ""
+
+        # Exit the loop so that we avoid the 'Invalid option' error.
+        break
       else
         source ${INI_NAME}
         RESULT="$?"
@@ -202,6 +209,9 @@ while [ $# -gt 0 ] && [ "$SHOW_HELP" == "0" ]; do
           echo ""
           echo "  ERROR processing '${INI_NAME}' = ${RESULT}"
           echo ""
+
+          # Exit the loop so that we avoid the 'Invalid option' error.
+          break
         else
           SHOW_HELP=0
         fi
@@ -288,6 +298,12 @@ while [ $# -gt 0 ] && [ "$SHOW_HELP" == "0" ]; do
     SHOW_HELP=0
   fi
 
+  if [ "$SHOW_HELP" != "0" ]; then
+    echo ""
+    echo "  ERROR: Invalid option, saw '${1}'"
+    echo ""
+    break;
+  fi
 
   shift 1
 done
@@ -463,49 +479,55 @@ if [ "$SHOW_HELP" == "0" ]; then
   fi
 fi
 
-if [ "$SHOW_HELP" == "1" ]; then
-  echo ""
-  echo "  Usage is $0 [params]"
-  echo "    -ini <ini_file>"
-  echo "       specifies the .ini file to load, which specifies most other options."
-  echo "    -clean {0, no, \"\", 1, yes}"
-  echo "       Specifies whether or not to do a clean. Depending on the ROM this"
-  echo "       might be a 'make clean' or 'make clobber' or ???."
-  echo "       If any clean is specified then we do not build anything."
-  echo "    -verbose {0..9}"
-  echo "       0 = extra quite (not implemented), 1 = normal build messages,"
-  echo "       2 = extra build messages, 3..9 = even more build messages (not be implemented)."
-  echo "    -rom {rom name}"
-  echo "       Specifies what ROM to build for. The value given must match the xxx"
-  echo "       portion of one of the build_xxx.sh files in the build_scripts directory."
-  echo "    -sync {0, no, \"\", 1, yes}"
-  echo "       Indicates whether we should do a 'repo sync' of the source before the build."
-  echo "    -synccpus ${MIN_CPUS}..?"
-  echo "       < 0 = subtract from ${MAX_CPUS} (must end up > 0)"
-  echo "         0 = use ${MAX_CPUS} (max on this system)"
-  echo "       > 0 = use that value even if greater than ${MAX_CPUS}"
-  echo "       Number of CPUs to use when doing a sync"
-  echo "    -push {0, no, \"\", 1, yes}"
-  echo "       Indicates whether or not to do an 'adb push' of the KANG to the phone."
-  echo "    -fpatch {0, no, \"\", 1, yes}"
-  echo "       Indicates whether or not to force patching when NOT syncing. Not"
-  echo "        recommended unless you did a manual sync and have clean sources."
-  echo "    -phone <phone name>"
-  echo "       Name of phone to build for, WARNING only tested with 'ace'"
-  echo "    -srcdir <path>"
-  echo "       Full path to root of where the ROM source is located"
-  echo "    -dbox <path>"
-  echo "       Full path to a Dropbox directory to copy results to, can be \"\""
-  echo "    -make {full, rebuild}"
-  echo "       full    = 'make clobber' (or equivalent) followed by a rebuild."
-  echo "       rebuild = 'make bacon' (or equivalent for the given ROM)"
-  echo "    -run {0, no, \"\", 1, yes}"
-  echo "       Determines whether or not we actually do the build or just display"
-  echo "       the build information. It's safest to set this to 0 in the .ini and"
-  echo "       then override it on the command line after a verifying the info."
-  echo ""
-  echo "  For more details see the comments in the top of '$0'"
-  echo ""
+if [ "$SHOW_HELP" -gt "0" ]; then
+  if [ "$SHOW_HELP" == "1" ]; then
+    echo "  For more details use the command line option '-help' and see the"
+    echo "  comments in the top of '$0' and build_scripts/init.sh"
+    echo ""
+  else
+    echo ""
+    echo "  Usage is $0 [params]"
+    echo "    -ini <ini_file>"
+    echo "       specifies the .ini file to load, which specifies most other options."
+    echo "    -clean {0, no, \"\", 1, yes}"
+    echo "       Specifies whether or not to do a clean. Depending on the ROM this"
+    echo "       might be a 'make clean' or 'make clobber' or ???."
+    echo "       If any clean is specified then we do not build anything."
+    echo "    -verbose {0..9}"
+    echo "       0 = extra quite (not implemented), 1 = normal build messages,"
+    echo "       2 = extra build messages, 3..9 = even more build messages (not be implemented)."
+    echo "    -rom {rom name}"
+    echo "       Specifies what ROM to build for. The value given must match the xxx"
+    echo "       portion of one of the build_xxx.sh files in the build_scripts directory."
+    echo "    -sync {0, no, \"\", 1, yes}"
+    echo "       Indicates whether we should do a 'repo sync' of the source before the build."
+    echo "    -synccpus ${MIN_CPUS}..?"
+    echo "       < 0 = subtract from ${MAX_CPUS} (must end up > 0)"
+    echo "         0 = use ${MAX_CPUS} (max on this system)"
+    echo "       > 0 = use that value even if greater than ${MAX_CPUS}"
+    echo "       Number of CPUs to use when doing a sync"
+    echo "    -push {0, no, \"\", 1, yes}"
+    echo "       Indicates whether or not to do an 'adb push' of the KANG to the phone."
+    echo "    -fpatch {0, no, \"\", 1, yes}"
+    echo "       Indicates whether or not to force patching when NOT syncing. Not"
+    echo "        recommended unless you did a manual sync and have clean sources."
+    echo "    -phone <phone name>"
+    echo "       Name of phone to build for, WARNING only tested with 'ace'"
+    echo "    -srcdir <path>"
+    echo "       Full path to root of where the ROM source is located"
+    echo "    -dbox <path>"
+    echo "       Full path to a Dropbox directory to copy results to, can be \"\""
+    echo "    -make {full, rebuild}"
+    echo "       full    = 'make clobber' (or equivalent) followed by a rebuild."
+    echo "       rebuild = 'make bacon' (or equivalent for the given ROM)"
+    echo "    -run {0, no, \"\", 1, yes}"
+    echo "       Determines whether or not we actually do the build or just display"
+    echo "       the build information. It's safest to set this to 0 in the .ini and"
+    echo "       then override it on the command line after a verifying the info."
+    echo ""
+    echo "  For more details see the comments in the top of '$0' and build_scripts/init.sh"
+    echo ""
+  fi
   return 1
 fi
 

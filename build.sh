@@ -170,20 +170,20 @@ source ${AB_ROM_SCRIPT} || ExitError "Running '${AB_ROM_SCRIPT}'"
 if [ "$AB_DROPBOX_DIR" != "" ] ; then
   banner "Copying files to Dropbox folder"
 
-  ShowMessage "cp ${CM_NEW_ROM} ${AB_DROPBOX_DIR}"
-  cp ${CM_NEW_ROM} ${AB_DROPBOX_DIR}
+  ShowMessage "cp ${AB_NEW_ROM} ${AB_DROPBOX_DIR}"
+  cp ${AB_NEW_ROM} ${AB_DROPBOX_DIR}
 fi
 
 #
 # Decide whether or not to push the result to the phone
 #
 if [ "$AB_PUSH_TO_PHONE" = "yes" ] ; then
-  banner "adb push ${CM_NEW_ROM} /sdcard/"
-  adb push ${CM_NEW_ROM} /sdcard/ || ExitError "Pushing ROM to phone (is the phone attached?)"
+  banner "adb push ${AB_NEW_ROM} /sdcard/"
+  adb push ${AB_NEW_ROM} /sdcard/ || ExitError "Pushing ROM to phone (is the phone attached?)"
 fi
 
 banner "Freshly cooked bacon is ready!"
 ShowMessage "  ${AB_ROM_TYPE}:"
-ShowMessage "    ROM = ${CM_NEW_ROM}"
-ShowMessage "    MD5 = ${CM_NEW_ROM}.md5sum"
+ShowMessage "    ROM = ${AB_NEW_ROM}"
+ShowMessage "    MD5 = ${AB_NEW_ROM}.md5sum"
 ShowMessage ""

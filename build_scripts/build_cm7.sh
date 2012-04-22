@@ -10,39 +10,31 @@
 
 cd ${AB_SOURCE_DIR}
 
-if [ "$CROSS_COMPILE" = "" ]; then
+if [ "$CROSS_COMPILE" == "" ]; then
   export CROSS_COMPILE=${AB_SOURCE_DIR}/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
 fi
-if [ "$TARGET_TOOLS_PREFIX" = "" ]; then
+if [ "$TARGET_TOOLS_PREFIX" == "" ]; then
   export TARGET_TOOLS_PREFIX=${AB_SOURCE_DIR}/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
 fi
-if [ "$ARCH" = "" ]; then
+if [ "$ARCH" == "" ]; then
   export ARCH=arm
 fi
 
-if [ "$CCACHE_TOOL_DIR" = "" ] ; then
+if [ "$CCACHE_TOOL_DIR" == "" ] ; then
   CCACHE_TOOL_DIR=${AB_SOURCE_DIR}/prebuilt/linux-x86/ccache
   export PATH=$PATH:${CCACHE_TOOL_DIR}
 fi
 
-if [ "$CCACHE_DIR" = "" ] ; then
+if [ "$CCACHE_DIR" == "" ] ; then
   CCACHE_DIR=${HOME}/.ccache
 fi
 
-##echo ""
-##echo "CROSS_COMPILE       = '${CROSS_COMPILE}"
-##echo "TARGET_TOOLS_PREFIX = '${TARGET_TOOLS_PREFIX}'"
-##echo "ARCH                = '${ARCH}'"
-##echo "CCACHE_TOOL         = '${CCACHE_TOOL_DIR}'"
-##echo "CCACHE_DIR          = '${CCACHE_DIR}'"
-##echo "PATH                = '${PATH}'"
-
-# Output a newline since setting the cache size causes some output
+# Output a newline so that the output from setting the cache size looks better.
 echo ""
 ${CCACHE_TOOL_DIR}/ccache -M 10G
 
 
-if [ "${AB_MAKE_TYPE}" = "full" ]; then
+if [ "$AB_MAKE_TYPE" == "full" ]; then
   banner "make clobber"
   make clobber >> $LOG || ExitError "Running 'make clobber'"
 
@@ -50,7 +42,7 @@ if [ "${AB_MAKE_TYPE}" = "full" ]; then
   (source build/envsetup.sh && brunch ${AB_PHONE}) >> $LOG || ExitError "Running 'build/envsetup.sh && brunch ${AB_PHONE}'"
 
 else
-  if [ "${AB_MAKE_TYPE}" = "rebuild" ]; then
+  if [ "$AB_MAKE_TYPE" == "rebuild" ]; then
     banner "build/envsetup.sh && breakfast ${AB_PHONE}"
 
     # Force build.prop to be recreated so that ro.build.date will always be updated
@@ -70,40 +62,48 @@ fi
 
 #
 # NOTE: Any variables created from here down might be used by build.sh (our parent).
-#       Changing them requires updating not only build.sh, but scripts for other ROMs.
+#       Changing them requires updating not only build.sh, but scripts for other ROMs
+#       since they all do roughly the same thing.
 #
 
-#
-# Rename the ROM to a date tagged name and clean up any old files that might be lying around.
-#
-CM_OLD_ROM=${OUT_ROM_DIR}/update-cm-*-signed.zip
+# AB_OUT_ROM_DIR needs to match the location used by the sourc code's Makefile.
+AB_OUT_ROM_DIR=${AB_SOURCE_DIR}/out/target/product/${AB_PHONE}
+AB_OLD_ROM=${AB_OUT_ROM_DIR}/update-cm-*-signed.zip
 
-# New ROM is what we rename it to.
-# We also need the base name, mainly if building for BlackICE
-CM_NEW_ROM_BASE=${USER}-cm7-${UTC_DATE_FILE}.zip
-CM_NEW_ROM=${OUT_ROM_DIR}/${CM_NEW_ROM_BASE}
+# Create the name for the new ROM file as well as a full path to it. We don't
+# really need a separate AB_NEW_ROM_BASE variable right now, but we might want
+# to have it around in the future.
+#
+if [ "$AB_OFFICIAL" == "yes" ]; then
+  # Release candidate build (official build)
+  AB_NEW_ROM_BASE=${USER}-cm7-${UTC_DATE_FILE}-RC.zip
+else
+  # Normal/nightly build
+  AB_NEW_ROM_BASE=${USER}-cm7-${UTC_DATE_FILE}.zip
+fi
+AB_NEW_ROM=${AB_OUT_ROM_DIR}/${AB_NEW_ROM_BASE}
 
-rm -f ${OUT_ROM_DIR}/${USER}-cm7*.zip
-rm -f ${OUT_ROM_DIR}/${USER}-cm7*.zip.md5sum
-rm -f ${OUT_ROM_DIR}/cyanogen_${AB_PHONE}-ota-eng*.zip
+rm -f ${AB_OUT_ROM_DIR}/${USER}-cm7*.zip
+rm -f ${AB_OUT_ROM_DIR}/${USER}-cm7*.zip.md5sum
+rm -f ${AB_OUT_ROM_DIR}/cyanogen_${AB_PHONE}-ota-eng*.zip
 
 # Delete the md5sum file that the 'make' just created because it will contain
 # the default Cyanogen name. We will recreate the md5sum next using the new ROM.
-rm -f $CM_OLD_ROM.md5sum
+rm -f ${AB_OLD_ROM}.md5sum
 
 
-mv $CM_OLD_ROM $CM_NEW_ROM
+mv ${AB_OLD_ROM} ${AB_NEW_ROM}
 
-CM_MD5SUM=`md5sum -b $CM_NEW_ROM`
-echo "${CM_MD5SUM}" > ${CM_NEW_ROM}.md5sum
+AB_MD5SUM=`md5sum -b ${AB_NEW_ROM}`
+echo "${AB_MD5SUM}" > ${AB_NEW_ROM}.md5sum
 
 
-if [ ! -e $CM_NEW_ROM ] ; then
-  ExitError "Creating ${CM_NEW_ROM}"
+if [ ! -e $AB_NEW_ROM ] ; then
+  ExitError "Creating ${AB_NEW_ROM}"
 fi
 
-if [ ! -e ${CM_NEW_ROM}.md5sum ] ; then
-  ExitError "Creating ${CM_NEW_ROM}.md5sum"
+if [ ! -e ${AB_NEW_ROM}.md5sum ] ; then
+  ExitError "Creating ${AB_NEW_ROM}.md5sum"
 fi
 
 return 0
