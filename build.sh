@@ -74,9 +74,9 @@ function banner() {
 # UTC_BASE_DATE is used to get the date to work with when creating the other 2
 # dates. This was done so that there are no names for the day or month since if
 # that is in a non-English language it might fail.
-UTC_BASE_DATE=`date -u "+%F %T %Z"`
-UTC_DATE_STRING=`date -u --date="${UTC_BASE_DATE}"`
-UTC_DATE_FILE=`date -u --date="${UTC_BASE_DATE}" +%Y.%m.%d_%H.%M.%S_%Z`
+export UTC_BASE_DATE=`date -u "+%F %T %Z"`
+export UTC_DATE_STRING=`date -u --date="${UTC_BASE_DATE}"`
+export UTC_DATE_FILE=`date -u --date="${UTC_BASE_DATE}" +%Y.%m.%d_%H.%M.%S_%Z`
 
 # Get the full path of the directory that this script is running in.
 THE_BUILD_DIR=`GetAbsoluteDirOfFile $0`
