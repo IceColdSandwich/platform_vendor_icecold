@@ -52,8 +52,8 @@ else
     breakfast ${AB_PHONE} >> $LOG || ExitError "Running 'breakfast ${AB_PHONE}'"
 
     # Making the bacon is the main build (MAX_CPUS was calculated in init.sh).
-    banner "make bacon -j ${MAX_CPUS}"
-    make bacon -j ${MAX_CPUS} >> $LOG || ExitError "Running 'make bacon'"
+    banner "make bacon -j${MAX_CPUS}"
+    make bacon -j${MAX_CPUS} >> $LOG || ExitError "Running 'make bacon'"
   else
     ExitError "Invalid value for AB_MAKE_TYPE, saw '${AB_MAKE_TYPE}'"
   fi
