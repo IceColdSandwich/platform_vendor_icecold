@@ -35,8 +35,8 @@ ${CCACHE_TOOL_DIR}/ccache -M 20G
 
 # This is a bit of a hack, but we need AB_PHONE to be a normal phone name like 'ace';
 # However, this source's make files require a modified version of that name.
-LC_PHONE=htc_${AB_PHONE}-eng
-#LC_PHONE=htc_${AB_PHONE}-userdebug
+#LC_PHONE=htc_${AB_PHONE}-eng
+LC_PHONE=htc_${AB_PHONE}-userdebug
 
 # Force build.prop to be recreated so that ro.build.date will always be updated
 # since this is viewable on "Settings-->About Phone" now.
