@@ -33,15 +33,19 @@ fi
 echo ""
 ${CCACHE_TOOL_DIR}/ccache -M 20G
 
+# This is a bit of a hack, but we need AB_PHONE to be a normal phone name like 'ace';
+# However, this source's make files require a modified version of that name.
+LC_PHONE=htc_${AB_PHONE}-eng
+#LC_PHONE=htc_${AB_PHONE}-userdebug
+
+# Force build.prop to be recreated so that ro.build.date will always be updated
+# since this is viewable on "Settings-->About Phone" now.
+rm -f ${AB_SOURCE_DIR}/out/target/product/${AB_PHONE}/system/build.prop
+
 if [ "$AB_MAKE_TYPE" == "full" ]; then
   banner "make clobber"
   make clobber >> $LOG || ExitError "Running 'make clobber'"
 fi
-
-# This is a bit of a hack, but we need AB_PHONE to be a normal phone name like 'ace';
-# However, this source's make files require a modified version of that name.
-#LC_PHONE=htc_${AB_PHONE}-eng
-LC_PHONE=htc_${AB_PHONE}-userdebug
 
 banner "build/envsetup.sh && lunch ${LC_PHONE}"
 source build/envsetup.sh >> $LOG || ExitError "Running 'build/envsetup.sh'"
