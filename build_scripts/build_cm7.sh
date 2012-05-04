@@ -35,26 +35,20 @@ ${CCACHE_TOOL_DIR}/ccache -M 10G
 
 
 if [ "$AB_MAKE_TYPE" == "full" ]; then
-  banner "make clobber"
-  make clobber >> $LOG || ExitError "Running 'make clobber'"
-
-  banner "build/envsetup.sh && brunch ${AB_PHONE}"
-  (source build/envsetup.sh && brunch ${AB_PHONE}) >> $LOG || ExitError "Running 'build/envsetup.sh && brunch ${AB_PHONE}'"
-
+  execute_cmd "make clobber"              "make clobber"              "Running 'make clobber'"
+  execute_cmd "source build/envsetup.sh"  "source build/envsetup.sh"  "Running 'source build/envsetup.sh'"
+  execute_cmd "brunch ${AB_PHONE}"        "brunch ${AB_PHONE}"        "Running 'brunch ${AB_PHONE}'"
 else
   if [ "$AB_MAKE_TYPE" == "rebuild" ]; then
-    banner "build/envsetup.sh && breakfast ${AB_PHONE}"
-
     # Force build.prop to be recreated so that ro.build.date will always be updated
     # since this is viewable on "Settings-->About Phone" now.
     rm -f ${AB_SOURCE_DIR}/out/target/product/${AB_PHONE}/system/build.prop
 
-    source build/envsetup.sh >> $LOG || ExitError "Running 'build/envsetup.sh'"
-    breakfast ${AB_PHONE} >> $LOG || ExitError "Running 'breakfast ${AB_PHONE}'"
+    execute_cmd "source build/envsetup.sh"  "source build/envsetup.sh"    "Running 'source build/envsetup.sh'"
+    execute_cmd "breakfast ${AB_PHONE}"     "breakfast ${AB_PHONE}"       "Running 'breakfast ${AB_PHONE}'"
 
-    # Making the bacon is the main build (MAX_CPUS was calculated in init.sh).
-    banner "make bacon -j${MAX_CPUS}"
-    make bacon -j${MAX_CPUS} >> $LOG || ExitError "Running 'make bacon'"
+    # This is the main build (MAX_CPUS was calculated in init.sh).
+    execute_cmd "make bacon -j ${MAX_CPUS}"  "make bacon -j ${MAX_CPUS}"  "Running 'make bacon -j ${MAX_CPUS}'"
   else
     ExitError "Invalid value for AB_MAKE_TYPE, saw '${AB_MAKE_TYPE}'"
   fi

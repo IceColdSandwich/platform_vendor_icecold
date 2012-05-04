@@ -35,25 +35,22 @@ ${CCACHE_TOOL_DIR}/ccache -M 20G
 
 # This is a bit of a hack, but we need AB_PHONE to be a normal phone name like 'ace';
 # However, this source's make files require a modified version of that name.
-LC_PHONE=htc_${AB_PHONE}-eng
-#LC_PHONE=htc_${AB_PHONE}-userdebug
+#LC_PHONE=htc_${AB_PHONE}-eng
+LC_PHONE=htc_${AB_PHONE}-userdebug
 
 # Force build.prop to be recreated so that ro.build.date will always be updated
 # since this is viewable on "Settings-->About Phone" now.
 rm -f ${AB_SOURCE_DIR}/out/target/product/${AB_PHONE}/system/build.prop
 
 if [ "$AB_MAKE_TYPE" == "full" ]; then
-  banner "make clobber"
-  make clobber >> $LOG || ExitError "Running 'make clobber'"
+  execute_cmd "make clobber"  "make clobber"  "Running 'make clobber'"
 fi
 
-banner "build/envsetup.sh && lunch ${LC_PHONE}"
-source build/envsetup.sh >> $LOG || ExitError "Running 'build/envsetup.sh'"
-lunch ${LC_PHONE} >> $LOG || ExitError "Running 'lunch ${LC_PHONE}'"
+execute_cmd "source build/envsetup.sh"  "source build/envsetup.sh"  "Running 'source build/envsetup.sh'"
+execute_cmd "lunch ${LC_PHONE}"         "lunch ${LC_PHONE}"         "Running 'lunch ${LC_PHONE}'"
 
-# Making the bacon is the main build (MAX_CPUS was calculated in init.sh).
-banner "make lord -j${MAX_CPUS}"
-make lord -j${MAX_CPUS} >> $LOG || ExitError "Running 'make lord'"
+# This is the main build (MAX_CPUS was calculated in init.sh).
+execute_cmd "make lord -j ${MAX_CPUS}"  "make lord -j ${MAX_CPUS}"  "Running 'make lord -j ${MAX_CPUS}'"
 
 #
 # NOTE: Any variables created from here down might be used by build.sh (our parent).
