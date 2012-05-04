@@ -22,9 +22,9 @@
 #     Affects the variable AB_CLEAN
 #
 #  -verbose {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-#     0    = extra quite build messages (may not be implemented).
+#     0    = extra quite build messages.
 #     1    = normal build messages.
-#     2    = additional build messages.
+#     2    = more messages.
 #     3..9 = even more build messages (may not be implemented yet)
 #     Affects the variable AB_VERBOSE
 #
@@ -67,7 +67,7 @@
 #           but this has not been tested!
 #     Affects the variable AB_PHONE
 #
-#  -sourcedir <source path>
+#  -srcdir <source path>
 #     Root directory where your ROM sources are installed, for example:
 #       ${HOME}/android/system
 #     Affects the variable AB_SOURCE_DIR
@@ -429,7 +429,7 @@ if [ "$SHOW_HELP" == "0" ]; then
       SHOW_HELP=1
     fi
 
-    # A leading "-" indicates we got another command line option instead of a phone name.
+    # A leading "-" indicates we got another command line option instead of a dropbox dir.
     if [ "$AB_DROPBOX_DIR" != "" ]; then
       ARG_TEMP=${AB_DROPBOX_DIR:0:1}
       if [ "$ARG_TEMP" == "-" ]; then
@@ -486,16 +486,17 @@ if [ "$SHOW_HELP" -gt "0" ]; then
     echo ""
   else
     echo ""
-    echo "  Usage is $0 [params]"
+    echo "  Usage is $0 [-ini <ini file>] [options]"
     echo "    -ini <ini_file>"
-    echo "       specifies the .ini file to load, which specifies most other options."
+    echo "       Specifies the .ini file to load, which initializes most other options."
+    echo "       If this is not given you will have to manually specify many other options."
     echo "    -clean {0, no, \"\", 1, yes}"
     echo "       Specifies whether or not to do a clean. Depending on the ROM this"
     echo "       might be a 'make clean' or 'make clobber' or ???."
     echo "       If any clean is specified then we do not build anything."
     echo "    -verbose {0..9}"
-    echo "       0 = extra quite (not implemented), 1 = normal build messages,"
-    echo "       2 = extra build messages, 3..9 = even more build messages (not be implemented)."
+    echo "       0 = extra quiet, 1 = normal build messages, 2 = more messages"
+    echo "       3..9 = even more build messages (not be implemented)."
     echo "    -rom {rom name}"
     echo "       Specifies what ROM to build for. The value given must match the xxx"
     echo "       portion of one of the build_xxx.sh files in the build_scripts directory."
@@ -606,24 +607,33 @@ if [ "$AB_CLEAN" == "no" ]; then
           ALL_PATCH_LIST=$ALL_PATCH_LIST" ${patch_dir},${patch_file}"
         fi
 
-  #      echo "patch_name  = '$patch_name'"
-  #      echo "source_type = '$source_type'"
-  #      echo "patch_type  = '$patch_type'"
-  #      echo "patch_file  = '$patch_file'"
-  #      echo "patch_dir   = '$patch_dir'"
-  #      echo "variable    = '${PATCH_VAR}' = ${!PATCH_VAR}"
-  #      echo "Patch List  = '${ALL_PATCH_LIST}'"
-  #      echo ""
+        if [ $AB_VERBOSE -ge 2 ]; then
+          echo "  patch_name  = '$patch_name'"
+          echo "  source_type = '$source_type'"
+          echo "  patch_type  = '$patch_type'"
+          echo "  patch_file  = '$patch_file'"
+          echo "  patch_dir   = '$patch_dir'"
+          echo "  variable    = '${PATCH_VAR}' = ${!PATCH_VAR}"
+          echo "  Patch List  = '${ALL_PATCH_LIST}'"
+          echo ""
+        fi
       fi
     done <${DEFAULT_PATCH_FILE}
   fi
 
 fi  # end of test section in which "$CLEAN_ONLY" is 0
 
+# Show the summary of what we are about to build
 ShowMessage ""
 ShowMessage "Build information"
 ShowMessage "   Build date     = ${UTC_DATE_STRING}"
-ShowMessage "   INI file       = ${INI_NAME}"
+
+if [ "$INI_NAME" == "" ]; then
+  ShowMessage "   INI file       = <<NONE>>"
+else
+  ShowMessage "   INI file       = ${INI_NAME}"
+fi
+
 ShowMessage "   User           = ${USER}"
 ShowMessage "   Home dir       = ${HOME}"
 
@@ -657,7 +667,7 @@ if [ "$AB_CLEAN" == "no" ]; then
   fi
 
   if [ "$AB_DROPBOX_DIR" == "" ]; then
-    ShowMessage "   Dropbox dir    = none"
+    ShowMessage "   Dropbox dir    = <<NONE>>"
   else
     ShowMessage "   Dropbox dir    = ${AB_DROPBOX_DIR}"
   fi
@@ -667,7 +677,7 @@ if [ "$AB_CLEAN" == "no" ]; then
 
   if [ $AB_RUN != "yes" ]; then
     ShowMessage ""
-    ShowMessage "(Not building anything because AB_RUN (-run) = 'no')"
+    ShowMessage " -- Not building anything because AB_RUN = 'no' (or -run 0 was given) --"
   fi
 
 else

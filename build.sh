@@ -9,7 +9,7 @@
 #
 # If you don't know how to get or setup the ICS sources then here is one link that
 # may help you get started
-#   *** TODO: find the link
+#   https://github.com/IceColdSandwich/android
 #
 # Note that "ace" is referenced above, which is the codename for the Desire HD.
 # Although this script *might* work for other phones it has only been tested for
@@ -17,6 +17,10 @@
 #
 # See init.sh for command line argument information.
 #
+
+# We need to initialize a few variables so they function properly even before
+# we load the .ini file.
+AB_VERBOSE="1"
 
 # Returns the absolute path of the item which can be a file or directory
 function GetAbsolutePath() {
@@ -40,18 +44,17 @@ function GetAbsoluteDirOfFile() {
   echo $ARG
 }
 
+# Output wrapper in case we want to do something for each line of output.
+function ShowMessage() {
+  echo "$@"
+}
 
 # Error control
 function ExitError() {
-  echo ""
+  ShowMessage ""
   ShowMessage "ERROR $@"
-  echo ""
+  ShowMessage ""
   exit 1
-}
-
-# Logged output
-function ShowMessage() {
-  echo "$@" | tee -a $LOG  2>&1
 }
 
 #
@@ -59,12 +62,40 @@ function ShowMessage() {
 # currently being done. Note that we can not use this until util_sh is loaded,
 # which defines ShowMessage.
 #
-function banner() {
+function Banner() {
   ShowMessage ""
   ShowMessage "*******************************************************************************"
   ShowMessage "  $@"
   ShowMessage "*******************************************************************************"
   ShowMessage ""
+}
+
+#
+# Helper function to execute a command.
+#  - arg 1 = command to execute
+#  - arg 2 = message to give to Banner. "" = don't call Banner.
+#  - arg 3 = message to give to ExitError if there is an error. "" = don't call ExitError.
+#
+function execute_cmd() {
+  local cmd="$1"
+  local msg="$2"
+  local err="$3"
+
+  if [ $AB_VERBOSE -ge 2 ]; then
+    local dbg="execute_cmd(): cmd = \"${cmd}\", msg = \"${msg}\", err = \"${err}\""
+    ShowMessage ""
+    ShowMessage "${dbg}"
+  fi
+
+  if [ "$msg" != "" ]; then
+    Banner ${msg}
+  fi
+
+  if [ "$err" == "" ]; then
+    ${cmd}
+  else
+    ${cmd} || ExitError ${err}
+  fi
 }
 
 
@@ -87,20 +118,13 @@ THE_SCRIPT_DIR=${THE_BUILD_DIR}/build_scripts
 # Any included patches are expected to be in the patches directory below us.
 THE_PATCH_DIR=${THE_BUILD_DIR}/patches
 
-# Setup a log file
-LOG=${THE_BUILD_DIR}/build-${UTC_DATE_FILE}.log
-export LOG
-
-# Write a header to the LOG file. We don't use ShowMessage because we don't really
-# want this to show up on the
-echo "" > ${LOG}
-echo "Date    : $UTC_DATE_STRING" >> ${LOG}
-echo "Cmd Line: $0 $@" >> ${LOG}
-
+# We save all the command line arguments in a variable so we can still access
+# them from within a function (because a function will have its own $@).
+CMD_LINE_ARGS="$@"
 
 # Process all the command line arguments before changing directory in case
-# there are any relative paths.
-source ${THE_SCRIPT_DIR}/init.sh || ExitError "Running 'build_scripts/init.sh'"
+# there are any relative paths. Many variables will be setup in init.sh.
+execute_cmd "source ${THE_SCRIPT_DIR}/init.sh ${CMD_LINE_ARGS}"  "source ${THE_SCRIPT_DIR}/init.sh"  "Running source ${THE_SCRIPT_DIR}/init.sh"
 
 if [ $AB_RUN == "no" ]; then
   # Do not build anything. We just abort now that the build info has been displayed
@@ -112,9 +136,7 @@ fi
 if [ "$AB_CLEAN" = "yes" ]; then
   # *** TODO: Should this go into the build_xxx.sh script for each ROM?
   cd ${AB_SOURCE_DIR}
-
-  banner "Cleaning ${AB_ROM_TYPE} (make clobber)"
-  make clobber || ExitError "Doing ${AB_ROM_TYPE} clean, 'make clobber'"
+  execute_cmd "make clobber"  "Cleaning ${AB_ROM_TYPE} (make clobber)"  "Running 'Cleaning ${AB_ROM_TYPE} (make clobber)'"
 
   # After a clean we do not do the build
   exit 0
@@ -123,9 +145,8 @@ fi
 # Do a 'repo sync' if requested
 if [ "$AB_SYNC" = "yes" ]; then
   # *** TODO: Should this go into the build_xxx.sh script for each ROM?
-  banner "${AB_ROM_TYPE} repo sync -j ${NUM_CPUS}"
   cd ${AB_SOURCE_DIR}
-  repo sync -j ${NUM_CPUS} >> $LOG  || ExitError "Running ${AB_ROM_TYPE} 'repo sync'"
+  execute_cmd "repo sync -j ${NUM_CPUS}"  "repo sync -j ${NUM_CPUS}"  "Running 'repo sync -j ${NUM_CPUS}'"
 fi
 
 #
@@ -139,7 +160,7 @@ if [ "$ALL_PATCH_LIST" != "" ]; then
     PATCH_DIR=${PATCH_ITEM%%,*}
     PATCH_FILE=${PATCH_ITEM##*,}
 
-    banner "Applying patch: ${PATCH_FILE}"
+    Banner "Applying patch: ${PATCH_FILE}"
     if [ ! -d $PATCH_DIR ]; then
       ExitError "Patch file destination directory does not exist, '${PATCH_DIR}"
     fi
@@ -150,10 +171,10 @@ if [ "$ALL_PATCH_LIST" != "" ]; then
     if [ "${PATCH_FILE:(-4)}" = ".git" ]; then
       # .git patches are just like a shell script. Execute the patch.
       ShowMessage `cat $PATCH_FILE`
-      $PATCH_FILE || ExitError "Applying patch file '$PATCH_FILE'"
+      execute_cmd "${PATCH_FILE}"  ""  "Applying patch file '${PATCH_FILE}'"
     else
       # .patch patches are diff files
-      patch --no-backup-if-mismatch -p0 < ${PATCH_FILE} || ExitError "Applying patch file '$PATCH_FILE'"
+      execute_cmd "patch --no-backup-if-mismatch -p0 < ${PATCH_FILE}"  ""  "Applying patch file '${PATCH_FILE}'"
     fi
 
     cd - &>/dev/null
@@ -162,13 +183,13 @@ fi
 
 
 # Now do the build
-source ${AB_ROM_SCRIPT} || ExitError "Running '${AB_ROM_SCRIPT}'"
+execute_cmd "source ${AB_ROM_SCRIPT}"  "Running 'source ${AB_ROM_SCRIPT}'"  "Running 'source ${AB_ROM_SCRIPT}'"
 
 #
 # Copy results to Dropbox if requested
 #
 if [ "$AB_DROPBOX_DIR" != "" ] ; then
-  banner "Copying files to Dropbox folder"
+  Banner "Copying files to Dropbox folder"
 
   ShowMessage "cp ${AB_NEW_ROM} ${AB_DROPBOX_DIR}"
   cp ${AB_NEW_ROM} ${AB_DROPBOX_DIR}
@@ -178,12 +199,13 @@ fi
 # Decide whether or not to push the result to the phone
 #
 if [ "$AB_PUSH_TO_PHONE" = "yes" ] ; then
-  banner "adb push ${AB_NEW_ROM} /sdcard/"
-  adb push ${AB_NEW_ROM} /sdcard/ || ExitError "Pushing ROM to phone (is the phone attached?)"
+  execute_cmd "adb push ${AB_NEW_ROM} /sdcard/"  "adb push ${AB_NEW_ROM} /sdcard/"  "Pushing ROM to phone (is the phone attached?)"
 fi
 
-banner "Freshly cooked bacon is ready!"
-ShowMessage "  ${AB_ROM_TYPE}:"
-ShowMessage "    ROM = ${AB_NEW_ROM}"
-ShowMessage "    MD5 = ${AB_NEW_ROM}.md5sum"
+if [ $AB_VERBOSE -ne 0 ]; then
+  Banner "Freshly cooked bacon is ready!"
+  ShowMessage "  ${AB_ROM_TYPE}:"
+  ShowMessage "    ROM = ${AB_NEW_ROM}"
+  ShowMessage "    MD5 = ${AB_NEW_ROM}.md5sum"
+fi
 ShowMessage ""
